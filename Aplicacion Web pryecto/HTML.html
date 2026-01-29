@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Soporte OS Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Asistente Técnico OS</h1>
+        
+        <input type="text" id="buscador" placeholder="Busca un problema (ej: pantalla, permisos...)" 
+               class="w-full p-3 rounded-lg border border-gray-300 mb-6 shadow-sm">
+
+        <div id="resultados" class="space-y-4">
+            </div>
+    </div>
+
+    <script>
+        // Los datos que definimos antes
+        const soporteTecnico = {
+            "Windows": [
+                { id: 1, titulo: "Pantalla Azul (BSOD)", pasos: "Reinicia en modo seguro y actualiza drivers." },
+                { id: 2, titulo: "Lentitud al arrancar", pasos: "Desactiva programas en la pestaña Inicio del Administrador de Tareas." }
+            ],
+            "Linux": [
+                { id: 3, titulo: "Permisos denegados", pasos: "Usa el comando 'chmod +x' o antepone 'sudo' al comando." },
+                { id: 4, titulo: "Interfaz gráfica congelada", pasos: "Presiona Ctrl+Alt+F3 y reinicia el servicio gdm o lightdm." }
+            ],
+            "macOS": [
+                { id: 5, titulo: "Pelota de playa giratoria", pasos: "Usa Command + Option + Esc para forzar la salida de apps." }
+            ]
+        };
+
+        const buscador = document.getElementById('buscador');
+        const contenedor = document.getElementById('resultados');
+
+        function mostrarSoluciones(filtro = "") {
+            contenedor.innerHTML = "";
+            
+            // Recorremos cada sistema operativo
+            for (const os in soporteTecnico) {
+                soporteTecnico[os].forEach(item => {
+                    // Filtramos por búsqueda
+                    if (item.titulo.toLowerCase().includes(filtro.toLowerCase())) {
+                        const card = `
+                            <div class="bg-white p-4 rounded-lg shadow border-l-4 ${os === 'Windows' ? 'border-blue-500' : 'border-green-500'}">
+                                <span class="text-xs font-bold text-gray-400 uppercase">${os}</span>
+                                <h2 class="text-xl font-semibold text-gray-800">${item.titulo}</h2>
+                                <p class="text-gray-600 mt-2">${item.pasos}</p>
+                            </div>
+                        `;
+                        contenedor.innerHTML += card;
+                    }
+                });
+            }
+        }
+
+        // Escuchar cuando el usuario escribe
+        buscador.addEventListener('input', (e) => mostrarSoluciones(e.target.value));
+
+        // Carga inicial
+        mostrarSoluciones();
+    </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soporte OS Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-3xl mx-auto">
+        <!-- Sección principal: Lista de problemas -->
+        <div id="pagina-problemas" class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Asistente Técnico OS</h1>
+            
+            <input type="text" id="buscador" placeholder="Busca un problema (ej: pantalla, permisos...)" 
+                   class="w-full p-3 rounded-lg border border-gray-300 mb-6 shadow-sm">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="lista-problemas">
+                <!-- Aquí se cargarán los problemas -->
+            </div>
+        </div>
+
+        <!-- Sección de solución (oculta inicialmente) -->
+        <div id="pagina-solucion" class="bg-white rounded-lg shadow-lg p-6 mt-6 hidden">
+            <button onclick="volverAProblemas()" class="bg-blue-500 text-white px-4 py-2 rounded-lg mb-4 hover:bg-blue-600">
+                ← Volver a problemas
+            </button>
+            
+            <h2 id="titulo-solucion" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+            <div class="flex items-center mb-3">
+                <span id="os-badge" class="text-xs font-bold text-white uppercase px-3 py-1 rounded"></span>
+            </div>
+            <div id="pasos-solucion" class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                <p class="text-gray-700"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base de datos de soporte técnico
+        const soporteTecnico = {
+            "Windows": [
+                { id: 1, titulo: "Pantalla Azul (BSOD)", pasos: "1. Reinicia tu computadora en modo seguro presionando F8 al iniciar.<br>2. Una vez en modo seguro, abre el Administrador de dispositivos.<br>3. Busca drivers con signos de exclamación amarillos.<br>4. Actualiza o reinstala esos drivers.<br>5. Reinicia normalmente." },
+                { id: 2, titulo: "Lentitud al arrancar", pasos: "1. Presiona Ctrl + Shift + Esc para abrir el Administrador de Tareas.<br>2. Ve a la pestaña 'Inicio'.<br>3. Selecciona los programas que no necesitas al iniciar.<br>4. Haz clic derecho y selecciona 'Deshabilitar'.<br>5. Reinicia el equipo para ver la mejora." },
+                { id: 3, titulo: "WiFi no conecta", pasos: "1. Verifica que el WiFi esté activado en el interruptor físico.<br>2. Reinicia el router y el módem.<br>3. Ve a Configuración > Red e Internet > WiFi.<br>4. Olvida la red y vuelve a conectarte.<br>5. Actualiza el driver de la tarjeta de red." }
+            ],
+            "Linux": [
+                { id: 4, titulo: "Permisos denegados", pasos: "1. Abre una terminal (Ctrl + Alt + T).<br>2. Para ejecutar un archivo: usa 'chmod +x nombre_archivo'.<br>3. Para instalar software: antepone 'sudo' al comando (ej: sudo apt update).<br>4. Ingresa tu contraseña cuando te la solicite.<br>5. Si persiste, revisa los permisos con 'ls -l'." },
+                { id: 5, titulo: "Interfaz gráfica congelada", pasos: "1. Presiona Ctrl + Alt + F3 para abrir una terminal.<br>2. Inicia sesión con tu usuario y contraseña.<br>3. Identifica el gestor gráfico: 'sudo systemctl status gdm' o 'lightdm'.<br>4. Reinicia el servicio: 'sudo systemctl restart gdm'.<br>5. Vuelve a la interfaz con Ctrl + Alt + F2 o F7." },
+                { id: 6, titulo: "Paquetes rotos", pasos: "1. Abre terminal: Ctrl + Alt + T.<br>2. Ejecuta: 'sudo dpkg --configure -a'.<br>3. Luego: 'sudo apt update'.<br>4. Repara dependencias: 'sudo apt --fix-broken install'.<br>5. Actualiza todo: 'sudo apt upgrade'." }
+            ],
+            "macOS": [
+                { id: 7, titulo: "Pelota de playa giratoria", pasos: "1. Presiona Command + Option + Esc para abrir el forzador de salida.<br>2. Selecciona la aplicación que no responde.<br>3. Haz clic en 'Forzar salida'.<br>4. Si persiste, reinicia el Mac manteniendo presionado el botón de encendido.<br>5. Para prevenirlo, cierra aplicaciones que no uses." },
+                { id: 8, titulo: "Batería se agota rápido", pasos: "1. Ve a Preferencias del Sistema > Batería.<br>2. Revisa qué aplicaciones consumen más energía.<br>3. Cierra aplicaciones en segundo plano.<br>4. Reduce el brillo de pantalla.<br>5. Desactiva Bluetooth y WiFi cuando no los uses." }
+            ]
+        };
+
+        const buscador = document.getElementById('buscador');
+        const listaProblemas = document.getElementById('lista-problemas');
+        const paginaProblemas = document.getElementById('pagina-problemas');
+        const paginaSolucion = document.getElementById('pagina-solucion');
+        const tituloSolucion = document.getElementById('titulo-solucion');
+        const pasosSolucion = document.getElementById('pasos-solucion');
+        const osBadge = document.getElementById('os-badge');
+
+        // Colores para cada sistema operativo
+        const coloresOS = {
+            "Windows": { bg: "bg-blue-500", border: "border-blue-500" },
+            "Linux": { bg: "bg-green-500", border: "border-green-500" },
+            "macOS": { bg: "bg-gray-500", border: "border-gray-500" }
+        };
+
+        // Mostrar todos los problemas inicialmente
+        function mostrarProblemas(filtro = "") {
+            listaProblemas.innerHTML = "";
+            
+            for (const os in soporteTecnico) {
+                soporteTecnico[os].forEach(item => {
+                    if (item.titulo.toLowerCase().includes(filtro.toLowerCase()) || 
+                        os.toLowerCase().includes(filtro.toLowerCase())) {
+                        
+                        const color = coloresOS[os];
+                        const problemaCard = `
+                            <div class="bg-white p-4 rounded-lg shadow border-l-4 ${color.border} cursor-pointer hover:shadow-md transition-shadow" 
+                                 onclick="mostrarSolucion(${item.id})">
+                                <span class="text-xs font-bold text-gray-500 uppercase">${os}</span>
+                                <h3 class="text-lg font-semibold text-gray-800 mt-1">${item.titulo}</h3>
+                            </div>
+                        `;
+                        listaProblemas.innerHTML += problemaCard;
+                    }
+                });
+            }
+        }
+
+        // Mostrar la solución de un problema específico
+        function mostrarSolucion(idProblema) {
+            // Buscar el problema por ID
+            let problema = null;
+            let sistema = "";
+            
+            for (const os in soporteTecnico) {
+                const encontrado = soporteTecnico[os].find(item => item.id === idProblema);
+                if (encontrado) {
+                    problema = encontrado;
+                    sistema = os;
+                    break;
+                }
+            }
+
+            if (problema) {
+                // Ocultar página de problemas
+                paginaProblemas.classList.add('hidden');
+                
+                // Mostrar página de solución
+                paginaSolucion.classList.remove('hidden');
+                
+                // Rellenar datos
+                tituloSolucion.textContent = problema.titulo;
+                pasosSolucion.innerHTML = `<p class="text-gray-700">${problema.pasos}</p>`;
+                
+                // Configurar badge del sistema operativo
+                const color = coloresOS[sistema];
+                osBadge.textContent = sistema;
+                osBadge.className = `text-xs font-bold text-white uppercase px-3 py-1 rounded ${color.bg}`;
+            }
+        }
+
+        // Volver a la lista de problemas
+        function volverAProblemas() {
+            paginaSolucion.classList.add('hidden');
+            paginaProblemas.classList.remove('hidden');
+            buscador.value = ""; // Limpiar búsqueda
+            mostrarProblemas(); // Recargar lista
+        }
+
+        // Evento de búsqueda
+        buscador.addEventListener('input', (e) => mostrarProblemas(e.target.value));
+
+        // Cargar inicialmente
+        mostrarProblemas();
+    </script>
+</body>
+</html>
